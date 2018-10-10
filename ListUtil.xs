@@ -347,6 +347,7 @@ CODE:
             /* fallthrough to NV now */
             retnv = retiv;
             accum = ACC_NV;
+            __attribute__ ((fallthrough));
         case ACC_NV:
             is_product ? (retnv *= slu_sv_value(sv))
                        : (retnv += slu_sv_value(sv));
