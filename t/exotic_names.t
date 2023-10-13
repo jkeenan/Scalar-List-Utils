@@ -21,7 +21,15 @@ if ($] >= 5.008) {
 
 sub compile_named_sub {
     my ( $fullname, $body ) = @_;
-    my $sub = eval "sub $fullname { $body }" . '\\&{$fullname}';
+    #my $sub = eval "sub $fullname { $body }" . '\\&{$fullname}';
+    my $sub;
+    if ($fullname =~ m/'/) {
+        no warnings;
+        eval "sub $fullname { $body }" . '\\&{$fullname}';
+    }
+    else {
+        eval "sub $fullname { $body }" . '\\&{$fullname}';
+    }
     return $sub if $sub;
     my $e = $@;
     require Carp;
@@ -84,6 +92,7 @@ push @ordinal,
 plan tests => @ordinal * 2 * 3;
 
 my $legal_ident_char = "A-Z_a-z0-9'";
+#my $legal_ident_char = "A-Z_a-z0-9";
 $legal_ident_char .= join '', map chr, 0x100, 0x498
     unless $] < 5.008;
 
@@ -100,9 +109,22 @@ for my $ord (@ordinal) {
 
     # test that we can *always* compile at least within the correct package
     my $expected;
-    if ( chr($ord) =~ m/^[$legal_ident_char]$/o ) { # compile directly
-        $expected = "native::$fullname";
-        $sub = compile_named_sub $expected => '(caller(0))[3]';
+    #if ( chr($ord) =~ m/^[$legal_ident_char]$/o ) { # compile directly
+    my $xyz = '';
+    if ( ($xyz = chr($ord)) =~ m/^[$legal_ident_char]$/o ) { # compile directly
+        $xyz = '' if not defined $xyz;
+#        print STDERR "AAA: $xyz\n" if $xyz eq q|'|;
+#        print STDERR "BBB: $ord\n" if $xyz eq q|'|;
+#        no if ($xyz eq q|'|), 'warnings';
+#        if ($xyz eq q|'|) {
+#            no warnings;
+#            $expected = "native::$fullname";
+#            $sub = compile_named_sub $expected => '(caller(0))[3]';
+#        }
+#        else {
+            $expected = "native::$fullname";
+            $sub = compile_named_sub $expected => '(caller(0))[3]';
+#        }
     }
     else { # not a legal identifier but at least test the package name by aliasing
         $expected = "aliased::native::$fullname";
